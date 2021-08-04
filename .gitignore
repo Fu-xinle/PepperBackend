@@ -1,0 +1,8 @@
+# Python编译后的字节码文件
+**/*.pyc
+
+# Visual Studio开发环境文件
+.vs/*
+
+# Visual Studio编译文件
+obj/*

@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "njpwerner.autodocstring",
+    "ms-python.vscode-pylance",
+    "ms-python.python",
+    "tht13.python",
+    "vscode-icons-team.vscode-icons",
+    "ms-ceintl.vscode-language-pack-zh-hans",
+    "visualstudioexptteam.vscodeintellicode",
+    "cstrap.flask-snippets",
+    "aaron-bond.better-comments",
+    "eamodio.gitlens"
+  ]
+}

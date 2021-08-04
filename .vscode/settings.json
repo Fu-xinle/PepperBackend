@@ -1,0 +1,69 @@
+{
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/.venv": true,
+        "**/.git": true,
+        "**/document": true,
+        "LICENSE": true,
+        ".gitignore": true,
+        "README.md": true,
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.venv": true,
+        "**/.git": true,
+        "**/document": true,
+        "LICENSE": true,
+        ".gitignore": true,
+        "README.md": true,
+    },
+    "python.languageServer": "Pylance",
+    "python.pythonPath": ".venv\\Scripts\\python.exe",
+    // yapf代码格式化工具 https://code.visualstudio.com/docs/python/editing
+    "python.formatting.provider": "yapf",
+    "python.formatting.yapfArgs": [
+        "--style",
+        "{based_on_style: google,spaces_before_comment:4,split_before_logical_operator:true,column_limit:150}"
+    ],
+    "editor.formatOnSave": true,
+    "python.linting.enabled": true,
+    "python.linting.lintOnSave": true,
+    // pylint代码静态检查工具 https://code.visualstudio.com/docs/python/linting
+    // Flake8、mypy、pydocstyle、pycodestyle暂时关闭
+    // 命名规则根据实际情况进行调整
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintUseMinimalCheckers": false,
+    "python.linting.pylintArgs": [
+        "--module-naming-style",
+        "snake_case",
+        "--class-naming-style",
+        "PascalCase",
+        "--function-naming-style",
+        "snake_case",
+        "--method-naming-style",
+        "snake_case",
+        "--const-naming-style",
+        "UPPER_CASE",
+        "--attr-naming-style",
+        "camelCase",
+        "--argument-naming-style",
+        "snake_case",
+        "--variable-rgx",
+        "(?P<snake>[a-z_]+)$",
+        // 类的属性，格式为snake_case或 UPPER_CASE，UPPER_CASE多用于配置类中
+        "--class-attribute-rgx",
+        "(?:(?P<snake>[a-z_]+)|(?P<UPPER>[A-Z_]+))$",
+        "--class-const-naming-style",
+        "UPPER_CASE",
+        "--inlinevar-rgx",
+        "(?P<snake>[a-z_]+)$",
+        "--max-line-length",
+        "150",
+        "--ignore-imports",
+        "yes",
+        // API接口中使用exception捕捉所有异常，取消Catching too general exception警告
+        "--disable", "W0703",
+    ],
+    // 注释
+    "better-comments.multilineComments": true,
+}

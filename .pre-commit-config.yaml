@@ -1,0 +1,32 @@
+exclude: ^.venv/|^.vscode/|^__pycache__/
+repos:
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        #pylint的args与settings.json中的pylint参数保持一致
+        args:
+          [
+            "--max-line-length=150",
+            "--disable=W0703",
+            "--module-naming-style=snake_case",
+            "--class-naming-style=PascalCase",
+            "--function-naming-style=snake_case",
+            "--method-naming-style=snake_case",
+            "--const-naming-style=UPPER_CASE",
+            "--attr-naming-style=camelCase",
+            "--argument-naming-style=snake_case",
+            "--variable-rgx=(?P<snake>[a-z_]+)$",
+            "--class-attribute-rgx=(?:(?P<snake>[a-z_]+)|(?P<UPPER>[A-Z_]+))$",
+            "--class-const-naming-style=UPPER_CASE",
+            "--inlinevar-rgx=(?P<snake>[a-z_]+)$",
+            "--ignore-imports=yes",
+          ]
+      - id: yapf
+        name: yapf
+        entry: yapf
+        language: system
+        types: [python]
