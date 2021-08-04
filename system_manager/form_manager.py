@@ -6,7 +6,8 @@ import traceback
 from flask import (jsonify, request)
 from flask_jwt_extended import jwt_required
 
-from toolbox import (PgHelper, logit)
+from toolbox.postgresql_helper import PgHelper
+from toolbox.user_log import logit
 
 from .blue_print import system_manager_api
 

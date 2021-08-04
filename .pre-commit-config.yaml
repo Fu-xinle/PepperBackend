@@ -24,6 +24,7 @@ repos:
             "--class-const-naming-style=UPPER_CASE",
             "--inlinevar-rgx=(?P<snake>[a-z_]+)$",
             "--ignore-imports=yes",
+            "--min-similarity-lines=18",
           ]
       - id: yapf
         name: yapf

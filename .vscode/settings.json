@@ -59,8 +59,12 @@
         "(?P<snake>[a-z_]+)$",
         "--max-line-length",
         "150",
+        // 代码重复性检查,相似行数默认是4,修改为18;
+        // 默认import导入属于代码重复检查的范围,修改为忽略import
         "--ignore-imports",
         "yes",
+        "--min-similarity-lines",
+        "18",
         // API接口中使用exception捕捉所有异常，取消Catching too general exception警告
         "--disable", "W0703",
     ],

@@ -6,7 +6,7 @@ import hashlib
 from flask import (jsonify, request)
 from flask_jwt_extended import create_access_token
 
-from toolbox import PgHelper
+from toolbox.postgresql_helper import PgHelper
 
 from .blue_print import system_manager_api
 
