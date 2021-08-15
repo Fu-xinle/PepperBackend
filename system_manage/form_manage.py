@@ -9,10 +9,10 @@ from flask_jwt_extended import jwt_required
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/form_manager/all_forms', methods=('get',))
+@system_manage_api.route('/form_manage/all_forms', methods=('get',))
 @jwt_required()
 def all_forms():
     """所有的表单项信息
@@ -20,7 +20,7 @@ def all_forms():
     不包括表单设计
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     responses:
       200:
         description: 表单信息，数组类型
@@ -61,7 +61,7 @@ def all_forms():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/add_form', methods=('post',))
+@system_manage_api.route('/form_manage/add_form', methods=('post',))
 @jwt_required()
 @logit()
 def add_form():
@@ -69,7 +69,7 @@ def add_form():
     用户新建表单项，将新建的表单项信息保存到到数据库
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: dict
         name: newFormInfo
@@ -102,7 +102,7 @@ def add_form():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/edit_form', methods=('post',))
+@system_manage_api.route('/form_manage/edit_form', methods=('post',))
 @jwt_required()
 @logit()
 def edit_form():
@@ -110,7 +110,7 @@ def edit_form():
     用户修改表单项信息，将修改后的表单项信息保存到到数据库
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: dict
         name: editFormInfo
@@ -143,7 +143,7 @@ def edit_form():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/delete_form', methods=('post',))
+@system_manage_api.route('/form_manage/delete_form', methods=('post',))
 @jwt_required()
 @logit()
 def delete_form():
@@ -151,7 +151,7 @@ def delete_form():
     用户删除表单项项信息，将信息保存到数据库
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: string
         name: guid
@@ -182,14 +182,14 @@ def delete_form():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/all_fields', methods=('post',))
+@system_manage_api.route('/form_manage/all_fields', methods=('post',))
 @jwt_required()
 def all_fields():
     """特定表单的字段信息
     获取特定表单的所有字段信息
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: string
         name: guid
@@ -256,14 +256,14 @@ def all_fields():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/add_field', methods=('post',))
+@system_manage_api.route('/form_manage/add_field', methods=('post',))
 @jwt_required()
 def add_field():
     """添加字段信息
     用户新建添加字段信息
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: dict
         name: field_info
@@ -300,14 +300,14 @@ def add_field():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/edit_field', methods=('post',))
+@system_manage_api.route('/form_manage/edit_field', methods=('post',))
 @jwt_required()
 def edit_field():
     """编辑更新字段信息
     用户修改字段信息，将修改后的字段项信息保存到到数据库
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: dict
         name: field_info
@@ -344,14 +344,14 @@ def edit_field():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/form_manager/delete_field', methods=('post',))
+@system_manage_api.route('/form_manage/delete_field', methods=('post',))
 @jwt_required()
 def delete_field():
     """删除字段项信息
     用户删除字段项信息，将信息保存到数据库
     ---
     tags:
-      - system_manager_api/form_manager
+      - system_manage_api/form_manage
     parameters:
       - in: string
         name: guid

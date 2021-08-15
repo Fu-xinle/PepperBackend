@@ -8,10 +8,10 @@ from flask_jwt_extended import jwt_required
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/authority_manager/all_authorize', methods=('get',))
+@system_manage_api.route('/authority_manage/all_authorize', methods=('get',))
 @jwt_required()
 def all_authorize():
     """所有的权限信息
@@ -19,7 +19,7 @@ def all_authorize():
     用于系统的权限树编辑
     ---
     tags:
-      - system_manager_api/authority_manager
+      - system_manage_api/authority_manage
     responses:
       200:
         description: 权限信息，数组类型
@@ -61,7 +61,7 @@ def all_authorize():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/authority_manager/add_authorize', methods=('post',))
+@system_manage_api.route('/authority_manage/add_authorize', methods=('post',))
 @jwt_required()
 @logit()
 def add_authorize():
@@ -69,7 +69,7 @@ def add_authorize():
     用户新建权限或者权限类别，将新建的权限或权限类别信息添加到数据库
     ---
     tags:
-      - system_manager_api/authority_manager
+      - system_manage_api/authority_manage
     parameters:
       - in: dict
         name: authorize_info
@@ -102,7 +102,7 @@ def add_authorize():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/authority_manager/edit_authorize', methods=('post',))
+@system_manage_api.route('/authority_manage/edit_authorize', methods=('post',))
 @jwt_required()
 @logit()
 def edit_authorize():
@@ -110,7 +110,7 @@ def edit_authorize():
     用户修改权限信息，将修改后的权限信息保存到到数据库
     ---
     tags:
-      - system_manager_api/authority_manager
+      - system_manage_api/authority_manage
     parameters:
       - in: dict
         name: authorize_info
@@ -147,7 +147,7 @@ def edit_authorize():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/authority_manager/delete_authorize', methods=('post',))
+@system_manage_api.route('/authority_manage/delete_authorize', methods=('post',))
 @jwt_required()
 @logit()
 def delete_authorize():
@@ -155,7 +155,7 @@ def delete_authorize():
     用户删除权限信息
     ---
     tags:
-      - system_manager_api/authority_manager
+      - system_manage_api/authority_manage
     parameters:
       - in: string
         name: guid

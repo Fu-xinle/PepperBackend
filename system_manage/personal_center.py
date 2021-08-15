@@ -10,17 +10,17 @@ from flask_jwt_extended import jwt_required
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/personal_center/gender_option', methods=('get',))
+@system_manage_api.route('/personal_center/gender_option', methods=('get',))
 @jwt_required()
 def gender_option():
     """性别配置信息
     获取性别的Select控件的选项配置信息
     ---
     tags:
-      - system_manager_api/personal_center
+      - system_manage_api/personal_center
     responses:
       200:
         description: 性别配置信息，数组类型
@@ -53,14 +53,14 @@ def gender_option():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/personal_center/academic_degree_option', methods=('get',))
+@system_manage_api.route('/personal_center/academic_degree_option', methods=('get',))
 @jwt_required()
 def academic_degree_option():
     """学位学历配置信息
     获取学位学历Select控件的选项配置信息
     ---
     tags:
-      - system_manager_api/personal_center
+      - system_manage_api/personal_center
     responses:
       200:
         description: 学位学历配置信息，数组类型
@@ -93,7 +93,7 @@ def academic_degree_option():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/personal_center/user_info_field_save', methods=('post',))
+@system_manage_api.route('/personal_center/user_info_field_save', methods=('post',))
 @jwt_required()
 @logit()
 def user_info_field_save():
@@ -101,7 +101,7 @@ def user_info_field_save():
     用户信息页面中，更新各字段信息
     ---
     tags:
-      - system_manager_api/personal_center
+      - system_manage_api/personal_center
     parameters:
       - in: string
         name: userGUID
@@ -146,7 +146,7 @@ def user_info_field_save():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/personal_center/update_photo', methods=('post',))
+@system_manage_api.route('/personal_center/update_photo', methods=('post',))
 @jwt_required()
 @logit()
 def update_photo():
@@ -154,7 +154,7 @@ def update_photo():
     用户信息页面中，上传照片裁切上传
     ---
     tags:
-      - system_manager_api/personal_center
+      - system_manage_api/personal_center
     parameters:
       - in: string
         name: userGUID
@@ -193,7 +193,7 @@ def update_photo():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/personal_center/reset_password', methods=('POST',))
+@system_manage_api.route('/personal_center/reset_password', methods=('POST',))
 @jwt_required()
 @logit()
 def reset_password():
@@ -202,7 +202,7 @@ def reset_password():
     根据用户的GUID更新对应用户的密码
     ---
     tags:
-      - system_manager_api/personal_center
+      - system_manage_api/personal_center
     parameters:
       - in: string
         name: userGUID

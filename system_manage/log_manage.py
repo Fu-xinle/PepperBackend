@@ -7,17 +7,17 @@ from flask_jwt_extended import jwt_required
 
 from toolbox.postgresql_helper import PgHelper
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/log_manager/user_log_server_side_data', methods=('post',))
+@system_manage_api.route('/log_manage/user_log_server_side_data', methods=('post',))
 @jwt_required()
 def user_log_server_side_data():
     """用户日志记录，后台分页显示获取
     获取指定分页的用户日志记录
     ---
     tags:
-      - system_manager_api/log_manager
+      - system_manage_api/log_manage
     parameters:
       - in: integer
         name: totalCount

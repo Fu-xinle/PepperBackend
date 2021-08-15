@@ -7,10 +7,10 @@ from flask_jwt_extended import jwt_required
 
 from toolbox.postgresql_helper import PgHelper
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/web_config/sidebar_menu', methods=('POST',))
+@system_manage_api.route('/web_config/sidebar_menu', methods=('POST',))
 @jwt_required()
 def sidebar_menu():
     """系统的侧边栏菜单
@@ -18,7 +18,7 @@ def sidebar_menu():
     则为对应navnarMenu菜单下的sidebarMenu
     ---
     tags:
-      - system_manager_api/web_config
+      - system_manage_api/web_config
     parameters:
       - in: string
         name: navnar_menu_guid

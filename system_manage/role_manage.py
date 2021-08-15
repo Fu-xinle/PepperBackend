@@ -1,5 +1,5 @@
-"""流程管理模块,包括读取所有流程;添加流程;编辑流程;删除流程;
-   读取流程图;流程图设计保存流程图;
+"""角色管理模块,包括读取所有角色;添加角色;编辑角色;删除角色;
+   角色与权限配置;
 """
 import traceback
 
@@ -9,21 +9,21 @@ from flask_jwt_extended import jwt_required
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/flow_manager/all_flows', methods=('get',))
+@system_manage_api.route('/role_manage/all_role', methods=('get',))
 @jwt_required()
-def all_flows():
-    """所有的流程项信息
-    获取系统的所有流程信息，不包括流程图信息，
-    仅用于添加、编辑流程名称和描述、删除流程信息
+def all_role():
+    """所有的角色信息
+    获取系统的所有角色信息，
+    用于系统的角色树编辑
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     responses:
       200:
-        description: 流程信息，数组类型
+        description: 角色信息，数组类型
         schema:
           properties:
             id:
@@ -31,13 +31,16 @@ def all_flows():
               description: 序号
             guid:
               type: string
-              description: 流程的唯一标识符
+              description: 角色的唯一标识符
             name:
               type: string
-              description: 流程名称
-            description:
+              description: 角色名称
+            parent_guid:
               type: string
-              description: 描述
+              description: 父级角色/角色类别的唯一标识
+            type:
+              type: boolean
+              description: 节点是否是角色节点
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -51,30 +54,30 @@ def all_flows():
     """
     try:
         pg_helper = PgHelper()
-        records = pg_helper.query_datatable('''select row_number() over(order by id) AS id, guid,name,description from gy_flow
-                                               order by id''')
+        records = pg_helper.query_datatable('''select id,guid,name,parent_guid,type from gy_role order by id''')
 
-        return jsonify({"flowData": [dict(x.items()) for x in records]}), 200
+        return jsonify({"roleData": [dict(x.items()) for x in records]}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/flow_manager/add_flow', methods=('post',))
+@system_manage_api.route('/role_manage/add_role', methods=('post',))
 @jwt_required()
 @logit()
-def add_flow():
-    """添加流程项信息
-    用户新建流程，将新建的流程信息保存到到数据库
+def add_role():
+    """添加角色信息
+    用户新建角色或者角色类别，
+    将角色或角色类别信息添加到数据库
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     parameters:
       - in: dict
-        name: newFlowInfo
+        name: role_info
         type: dict
         required: true
-        description: 新建的流程信息
+        description: 新建的角色信息
     responses:
       200:
         description: 空，不返回有效数据
@@ -91,9 +94,9 @@ def add_flow():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('newFlowInfo', None)
-        pg_helper.execute_sql('''INSERT INTO gy_flow(guid, name, description) VALUES(%s, %s, %s);''',
-                              (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
+        request_param = request.json.get('role_info', None)
+        pg_helper.execute_sql('''INSERT INTO gy_role(guid, name, parent_guid,type) VALUES(%s, %s, %s, %s);''', (request_param.get(
+            'guid', None), request_param.get('name', None), request_param.get('parent_guid', None), request_param.get('type', None)))
 
         return jsonify({}), 200
 
@@ -101,21 +104,21 @@ def add_flow():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/flow_manager/edit_flow', methods=('post',))
+@system_manage_api.route('/role_manage/edit_role', methods=('post',))
 @jwt_required()
 @logit()
-def edit_flow():
-    """编辑更新流程项信息
-    用户修改流程信息，将修改后的流程信息保存到到数据库
+def edit_role():
+    """编辑更新角色项信息
+    用户修改角色信息，将修改后的角色信息保存到到数据库
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     parameters:
       - in: dict
-        name: editFlowInfo
+        name: role_info
         type: dict
         required: true
-        description: 修改后的流程信息
+        description: 修改后的角色信息
     responses:
       200:
         description: 空，不返回有效数据
@@ -132,9 +135,12 @@ def edit_flow():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editFlowInfo', None)
-        pg_helper.execute_sql('''update gy_flow set name=%s,description=%s where guid=%s''',
-                              (request_param.get('name', None), request_param.get('description', None), request_param.get('guid', None)))
+        request_param = request.json.get('role_info', None)
+        if request_param.get('parent_guid', None) is None:
+            pg_helper.execute_sql('''update gy_role set name=%s where guid=%s''', (request_param.get('name', None), request_param.get('guid', None)))
+        else:
+            pg_helper.execute_sql('''update gy_role set name=%s,parent_guid=%s where guid=%s''',
+                                  (request_param.get('name', None), request_param.get('parent_guid', None), request_param.get('guid', None)))
 
         return jsonify({}), 200
 
@@ -142,21 +148,21 @@ def edit_flow():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/flow_manager/delete_flow', methods=('post',))
+@system_manage_api.route('/role_manage/delete_role', methods=('post',))
 @jwt_required()
 @logit()
-def delete_flow():
-    """删除流程项信息
-    用户删除流程项信息，将信息保存到数据库
+def delete_role():
+    """删除角色信息
+    用户删除角色信息
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     parameters:
       - in: string
         name: guid
         type: string
         required: true
-        description: 流程信息的guid
+        description: 角色信息的guid
     responses:
       200:
         description: 空，不返回有效数据
@@ -173,7 +179,7 @@ def delete_flow():
     """
     try:
         pg_helper = PgHelper()
-        pg_helper.execute_sql('''delete from gy_flow where guid=%s''', (request.json.get('guid', None),))
+        pg_helper.execute_sql('''delete from gy_role where guid=%s''', (request.json.get('guid', None),))
 
         return jsonify({}), 200
 
@@ -181,28 +187,23 @@ def delete_flow():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/flow_manager/flow_diagram', methods=('post',))
+@system_manage_api.route('/role_manage/role_by_authorize', methods=('post',))
 @jwt_required()
-def flow_diagram():
-    """获取流程模型的流程图
-    根据自定义模型的GUID标识，获取流程模型的流程图
+def role_by_authorize():
+    """获取角色对应的权限信息
+    获取角色对应的权限信息
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     parameters:
       - in: string
         name: guid
         type: string
         required: true
-        description: 流程模型信息的guid
+        description: 角色信息的guid
     responses:
       200:
-        description: 流程模型的流程图信息，字符串形式
-        schema:
-          properties:
-            algorithm_diagram:
-              type: string
-              description: 流程模型的流程图信息，字符串形式
+        description: 空，不返回有效数据
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -216,39 +217,34 @@ def flow_diagram():
     """
     try:
         pg_helper = PgHelper()
-        diagram_json = pg_helper.query_single_value('select diagram from gy_flow where guid=%s', (request.json.get('guid', None),))
+        records = pg_helper.query_datatable('''select authorize_guid from gy_role_authorize where role_guid=%s''', (request.json.get('guid', None),))
 
-        return jsonify({"flow_diagram": diagram_json}), 200
+        return jsonify({"roleByAuthorizeArray": records}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/flow_manager/save_flow_diagram', methods=('post',))
+@system_manage_api.route('/role_manage/save_role_by_authorize', methods=('post',))
 @jwt_required()
 @logit()
-def save_flow_diagram():
-    """保存流程模型的流程图以及节点信息
-    根据流程模型的GUID标识，保存流程模型的流程图以及节点信息
+def save_role_by_authorize():
+    """保存角色对应的权限信息
+    将用户配置的角色对应的权限信息保存到数据库
     ---
     tags:
-      - system_manager_api/flow_manager
+      - system_manage_api/role_manage
     parameters:
       - in: string
         name: guid
         type: string
         required: true
-        description: 流程模型的guid
-      - in: string
-        name: diagramJson
-        type: string
+        description: 角色信息的guid
+      - in: array
+        name: authorize_array
+        type: array
         required: true
-        description: 流程模型流程图的JSON字符串
-      - in: obeject
-        name: nodes
-        type: obeject
-        required: true
-        description: 流程模型各个节点信息数组
+        description: 角色对应的权限信息
     responses:
       200:
         description: 空，不返回有效数据
@@ -266,14 +262,13 @@ def save_flow_diagram():
     try:
         sql_tuple = ()
 
-        #更新流程图、删除旧的流程图节点
-        sql_string = "update gy_flow set diagram=%s where guid=%s;delete from gy_flow_node where flow_guid=%s;"
-        sql_tuple = sql_tuple + (request.json.get('diagram_json', None), request.json.get('guid', None), request.json.get('guid', None))
+        sql_string = "delete from gy_role_authorize where role_guid=%s;"
+        sql_tuple = sql_tuple + (request.json.get('guid', None),)
 
-        #插入节点的语句，如果节点存在仅仅更新相应的信息
-        for x in request.json.get('nodes', None)["flowNodeArray"]:
-            sql_string = sql_string + 'insert into gy_flow_node(guid,name,next_guid,flow_guid) values(%s,%s,%s,%s);'
-            sql_tuple = sql_tuple + (x['GUID'], x['nodeName'], x['nextFlow'], request.json.get('guid', None))
+        #构建SQL语句
+        for x in request.json.get('authorize_array', None):
+            sql_string = sql_string + '''insert into gy_role_authorize(role_guid,authorize_guid) values(%s,%s);'''
+            sql_tuple = sql_tuple + (request.json.get('guid', None), x)
 
         #数据库操作
         pg_helper = PgHelper()

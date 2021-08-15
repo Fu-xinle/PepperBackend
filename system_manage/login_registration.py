@@ -8,17 +8,17 @@ from flask_jwt_extended import create_access_token
 
 from toolbox.postgresql_helper import PgHelper
 
-from .blue_print import system_manager_api
+from .blue_print import system_manage_api
 
 
-@system_manager_api.route('/login_registration/login', methods=('POST',))
+@system_manage_api.route('/login_registration/login', methods=('POST',))
 def login():
     """用户登录
     根据用户名和密码验证用户是否存在、密码是否正确；
     验证通过后，获取用户的Token、权限和角色信息
     ---
     tags:
-      - system_manager_api/login_registration
+      - system_manage_api/login_registration
     parameters:
       - in: string
         name: userName
@@ -126,13 +126,13 @@ def login():
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
 
 
-@system_manager_api.route('/login_registration/phone_verif', methods=('POST',))
+@system_manage_api.route('/login_registration/phone_verif', methods=('POST',))
 def phone_verif():
     """给手机发送手机验证码
     根据手机号码，给手机发送手机验证码
     ---
     tags:
-      - system_manager_api/login_registration
+      - system_manage_api/login_registration
     parameters:
       - in: string
         name: phone

@@ -8,7 +8,7 @@ from flask_jwt_extended import JWTManager
 #from werkzeug.security import safe_str_cmp
 
 #蓝图路由导入
-from system_manager.blue_print import system_manager_api
+from system_manage.blue_print import system_manage_api
 
 #FLASK APP主程序
 app = Flask(__name__)
@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config.from_object('toolbox.flask_config.DevelopmentConfig')
 
 #蓝图注册
-app.register_blueprint(system_manager_api, url_prefix='/system_manager_api')
+app.register_blueprint(system_manage_api, url_prefix='/system_manage_api')
 
 #跨域问题
 CORS(app, supports_credentials=True)
