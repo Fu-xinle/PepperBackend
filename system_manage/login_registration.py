@@ -102,7 +102,7 @@ def login():
             real_name as "realName",to_char(birthday,'YYYY-MM-DD') as birthday,academic_degree as "academicDegree",
             gender,email,graduated_school as "graduatedSchool",phone_number as "phoneNumber",
             address,work_place as "workPlace",
-            case when photo is null then 'assets/images/default-user.png'
+            case when photo is null then 'assets/images/avator/default-user.png'
             else 'data:image/png;base64,'||encode(photo::bytea, 'base64') end as photo
             from gy_user where user_name=%s and password=%s''',
             (request.json.get('userName', None), hashlib.md5(request.json.get('password', None).encode(encoding='UTF-8')).hexdigest()))

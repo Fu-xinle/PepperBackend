@@ -74,7 +74,7 @@ def add_geoprocessing_model():
       - system_manage_api/geoprocessing_model
     parameters:
       - in: dict
-        name: newAlgorithmInfo
+        name: editGeoprocessingModelInfo
         type: dict
         required: true
         description: 新建的算法模型信息
@@ -94,7 +94,7 @@ def add_geoprocessing_model():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('newAlgorithmInfo', None)
+        request_param = request.json.get('editGeoprocessingModelInfo', None)
         pg_helper.execute_sql('''INSERT INTO gy_geoprocessing_model(guid, name, description) VALUES(%s, %s, %s);''',
                               (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
 
@@ -115,7 +115,7 @@ def edit_geoprocessing_model():
       - system_manage_api/geoprocessing_model
     parameters:
       - in: dict
-        name: editAlgorithmInfo
+        name: editGeoprocessingModelInfo
         type: dict
         required: true
         description: 修改后的算法模型信息
@@ -135,7 +135,7 @@ def edit_geoprocessing_model():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editAlgorithmInfo', None)
+        request_param = request.json.get('editGeoprocessingModelInfo', None)
         pg_helper.execute_sql('''update gy_geoprocessing_model set name=%s,description=%s where guid=%s''',
                               (request_param.get('name', None), request_param.get('description', None), request_param.get('guid', None)))
 
@@ -319,8 +319,8 @@ def save_geoprocessing_model_diagram():
         sql_tuple = ()
 
         #更新流程图、删除旧的算法图节点
-        sql_string = "update gy_geoprocessing_model set diagram=%s where guid=%s; \
-                      delete from gy_geoprocessing_model_node where geoprocessing_model_guid=%s;"
+        sql_string = '''update gy_geoprocessing_model set diagram=%s where guid=%s;
+                      delete from gy_geoprocessing_model_node where geoprocessing_model_guid=%s;'''
 
         sql_tuple = sql_tuple + (request.json.get('diagram_json', None), request.json.get('guid', None), request.json.get('guid', None))
 

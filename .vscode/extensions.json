@@ -9,6 +9,8 @@
     "visualstudioexptteam.vscodeintellicode",
     "cstrap.flask-snippets",
     "aaron-bond.better-comments",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "kevinrose.vsc-python-indent",
+    "dongli.python-preview"
   ]
 }

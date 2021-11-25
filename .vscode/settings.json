@@ -32,7 +32,6 @@
     // Flake8、mypy、pydocstyle、pycodestyle暂时关闭
     // 命名规则根据实际情况进行调整
     "python.linting.pylintEnabled": true,
-    "python.linting.pylintUseMinimalCheckers": false,
     "python.linting.pylintArgs": [
         "--module-naming-style",
         "snake_case",

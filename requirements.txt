@@ -1,0 +1,10 @@
+flask
+flasgger
+flask-jwt-extended
+flask-cors
+psycopg2
+pre-commit
+pylint
+yapf
+pipdeptree
+pip-review

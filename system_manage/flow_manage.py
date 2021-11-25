@@ -92,8 +92,12 @@ def add_flow():
     try:
         pg_helper = PgHelper()
         request_param = request.json.get('newFlowInfo', None)
+
+        # 流程基本信息插入
         pg_helper.execute_sql('''INSERT INTO gy_flow(guid, name, description) VALUES(%s, %s, %s);''',
                               (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
+
+        # 流程节点信息的插入
 
         return jsonify({}), 200
 
@@ -173,6 +177,7 @@ def delete_flow():
     """
     try:
         pg_helper = PgHelper()
+        # 删除的信息：流程信息、流程节点信息、工作流关联的本流程设置为NULL
         pg_helper.execute_sql('''delete from gy_flow where guid=%s''', (request.json.get('guid', None),))
 
         return jsonify({}), 200
