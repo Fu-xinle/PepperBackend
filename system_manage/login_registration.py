@@ -98,7 +98,7 @@ def login():
         #用户密码正确情况
         #获取用户基本信息
         general_info = pg_helper.query_datatable(
-            '''select guid as "userGUID",user_name as "userName",
+            '''select guid as "userGuid",user_name as "userName",
             real_name as "realName",to_char(birthday,'YYYY-MM-DD') as birthday,academic_degree as "academicDegree",
             gender,email,graduated_school as "graduatedSchool",phone_number as "phoneNumber",
             address,work_place as "workPlace",
@@ -116,7 +116,7 @@ def login():
             "passMessage": "",
             "token": create_access_token(identity={
                 'userName': user_info['userName'],
-                'userGUID': user_info['userGUID']
+                'userGuid': user_info['userGuid']
             }),
             "userInfo": user_info,
             "permissions": None,

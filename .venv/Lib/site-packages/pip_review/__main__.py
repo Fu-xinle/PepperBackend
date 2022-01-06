@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import os
 import re
 import argparse
 from functools import partial
@@ -12,9 +11,6 @@ from packaging import version
 
 PY3 = sys.version_info.major == 3
 if PY3:  # Python3 Imports
-    import urllib.request as urllib_request
-    import subprocess
-
     def check_output(*args, **kwargs):
         process = subprocess.Popen(stdout=subprocess.PIPE, *args, **kwargs)
         output, _ = process.communicate()
@@ -26,7 +22,6 @@ if PY3:  # Python3 Imports
         return output
 
 else:  # Python2 Imports
-    import urllib2 as urllib_request
     from subprocess import check_output
     import __builtin__
     input = getattr(__builtin__, 'raw_input')
@@ -169,8 +164,8 @@ ask_to_install = partial(InteractiveAsker().ask, prompt='Upgrade now?')
 
 
 def update_packages(packages, forwarded):
-    command = pip_cmd() + ['install'] + forwarded + [
-        '{0}=={1}'.format(pkg['name'], pkg['latest_version']) for pkg in packages
+    command = pip_cmd() + ['install', '-U'] + forwarded + [
+        '{0}'.format(pkg['name']) for pkg in packages
     ]
 
     subprocess.call(command, stdout=sys.stdout, stderr=sys.stderr)

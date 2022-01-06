@@ -53,9 +53,19 @@ def all_geoprocessing_model():
     """
     try:
         pg_helper = PgHelper()
-        records = pg_helper.query_datatable('''select row_number() over(order by id) AS id, guid,name,description
-                                                   from gy_geoprocessing_model
-                                                   order by id''')
+        records = pg_helper.query_datatable('''with recursive cte as
+                                                (
+                                                select guid, name, description,create_user,to_char(create_time,'YYYY-MM-DD HH24-MI-SS') as create_time,is_leaf,name::text as tree_name,parent_guid
+                                                from gy_geoprocessing_model where parent_guid = '99fb71e8-a794-47c2-a9c6-dc0a6e36248f'
+                                                union all
+                                                select
+                                                origin.guid, origin.name, origin.description,origin.create_user,to_char(origin.create_time,'YYYY-MM-DD HH24-MI-SS') as create_time,origin.is_leaf,
+                                                cte.tree_name || '~' || origin.name,origin.parent_guid
+                                                from cte,gy_geoprocessing_model origin 
+                                                where origin.parent_guid = cte.guid
+                                                )
+                                                select guid, name, description,create_user,create_time,is_leaf,tree_name,parent_guid
+                                                from cte;''')
 
         return jsonify({"geoprocessingModelData": [dict(x.items()) for x in records]}), 200
 
@@ -218,7 +228,10 @@ def geoprocessing_model_stencils():
     try:
         module_annotations = {}
         function_annotations = {}
-        #循环包下所有的模块
+        pg_helper = PgHelper()
+        #获取注册的空间数据
+
+        #循环包下所有的模块，即空间运算的算法
         for module_name, module_object in geoprocessing_algorithm.__dict__.items():
             if not module_name.startswith('__'):
                 module_annotations[module_name] = module_object.__annotations__
@@ -228,7 +241,10 @@ def geoprocessing_model_stencils():
                     if (not function_name.startswith('__')) and isinstance(function_object, types.FunctionType):
                         function_annotations[module_name].append(function_object.__annotations__)
 
-        return jsonify({"module_annotations": module_annotations, "function_annotations": function_annotations}), 200
+        #获取已有的地理处理模型
+        records = pg_helper.query_datatable('''select guid,name,'MODEL' as category  from gy_geoprocessing_model''')
+
+        return jsonify({"geoprocessingModelData": [dict(x.items()) for x in records]}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -238,7 +254,7 @@ def geoprocessing_model_stencils():
 @jwt_required()
 def geoprocessing_model_diagram():
     """获取自定义算法模型的流程图
-    根据自定义模型的GUID标识，获取自定义算法模型的流程图
+    根据自定义模型的guid标识，获取自定义算法模型的流程图
     ---
     tags:
       - system_manage_api/geoprocessing_model
@@ -281,7 +297,7 @@ def geoprocessing_model_diagram():
 @jwt_required()
 def save_geoprocessing_model_diagram():
     """保存自定义算法模型的流程图以及节点信息
-    根据算法模型的GUID标识，保存算法模型的节点数据、流程图信息
+    根据算法模型的guid标识，保存算法模型的节点数据、流程图信息
     ---
     tags:
       - system_manage_api/geoprocessing_model
@@ -295,7 +311,7 @@ def save_geoprocessing_model_diagram():
         name: diagramJson
         type: string
         required: true
-        description: 算法模型流程图的JSON字符串
+        description: 算法模型流程图的json字符串
       - in: obeject
         name: nodes
         type: obeject
@@ -329,7 +345,7 @@ def save_geoprocessing_model_diagram():
             sql_string = sql_string + '''insert into gy_geoprocessing_model_node(guid,module_name,function_name,parameter_name,from_module_name,
                                                                        from_function_name,from_name,from_type,function_name_zh_cn,parameter_name_zh_cn,geoprocessing_model_guid)
                                                                 values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'''
-            sql_tuple = sql_tuple + (x['GUID'], x['moduleName'], x['functionName'], x['name'], x['fromModuleName'], x['fromFunctionName'],
+            sql_tuple = sql_tuple + (x['guid'], x['moduleName'], x['functionName'], x['name'], x['fromModuleName'], x['fromFunctionName'],
                                      x['fromName'], x['fromType'], x['functionNameZhCn'], x['nameZhCn'], request.json.get('guid', None))
 
         #数据库操作
@@ -346,7 +362,7 @@ def save_geoprocessing_model_diagram():
 @jwt_required()
 def geoprocessing_model_parameters():
     """获取算法模型的需要设置的参数
-    根据算法模型的GUID标识，获取算法模型需要填写的参数
+    根据算法模型的guid标识，获取算法模型需要填写的参数
     ---
     tags:
       - system_manage_api/geoprocessing_model
@@ -400,7 +416,7 @@ def geoprocessing_model_parameters():
 @jwt_required()
 def exec_geoprocessing_model():
     """算法模型试运行测试
-    根据算法模型的GUID标识，算法模型的输入参数，运行算法模型
+    根据算法模型的guid标识，算法模型的输入参数，运行算法模型
     ---
     tags:
       - system_manage_api/geoprocessing_model
@@ -441,7 +457,7 @@ def exec_geoprocessing_model():
 
         # param_dic = {x["guid"]: x["default_value"] for x in list(request.json.get('param', []))}
 
-        # #根据算法模型的GUID，从数据库中获取所有的函数信息
+        # #根据算法模型的guid，从数据库中获取所有的函数信息
         # #包括模块、名函数名、参数名称等
         # pg_helper = PgHelper()
         # records = pg_helper.query_datatable(

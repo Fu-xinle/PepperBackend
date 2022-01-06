@@ -30,7 +30,7 @@ def logit():
             event_description = func.__doc__.splitlines()[0]
             pg_helper.execute_sql(
                 '''INSERT INTO gy_log(user_guid, user_name, event_description,param_json,event_time) VALUES(%s, %s, %s, %s, %s);''',
-                (current_user['userGUID'], current_user['userName'], event_description, json.dumps(param_json), datetime.datetime.now()))
+                (current_user['userGuid'], current_user['userName'], event_description, json.dumps(param_json), datetime.datetime.now()))
 
             return func(*args, **kwargs)
 

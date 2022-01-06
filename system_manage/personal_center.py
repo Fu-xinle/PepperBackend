@@ -104,7 +104,7 @@ def user_info_field_save():
       - system_manage_api/personal_center
     parameters:
       - in: string
-        name: userGUID
+        name: userGuid
         type: string
         required: true
         description: 用户的唯一标识
@@ -134,7 +134,7 @@ def user_info_field_save():
     """
     try:
         pg_helper = PgHelper()
-        user_guid = request.json.get('userGUID', None)
+        user_guid = request.json.get('userGuid', None)
         field_name = request.json.get('fieldName', None)
         field_value = request.json.get('fieldValue', None)
 
@@ -157,7 +157,7 @@ def update_photo():
       - system_manage_api/personal_center
     parameters:
       - in: string
-        name: userGUID
+        name: userGuid
         type: string
         required: true
         description: 用户的唯一标识
@@ -182,7 +182,7 @@ def update_photo():
     """
     try:
         pg_helper = PgHelper()
-        user_guid = request.json.get('userGUID', None)
+        user_guid = request.json.get('userGuid', None)
         photo_string = request.json.get('photoString', None)
 
         pg_helper.execute_sql('''update gy_user set photo=decode(%s, 'base64') where guid=%s''', (photo_string, user_guid))
@@ -199,16 +199,16 @@ def update_photo():
 def reset_password():
     """用户修改密码
     用户登录系统后，弹出对话框，修改密码
-    根据用户的GUID更新对应用户的密码
+    根据用户的guid更新对应用户的密码
     ---
     tags:
       - system_manage_api/personal_center
     parameters:
       - in: string
-        name: userGUID
+        name: userGuid
         type: string
         required: true
-        description: 用户GUID标识
+        description: 用户guid标识
       - in: string
         name: newPassword
         type: string
@@ -231,7 +231,7 @@ def reset_password():
     try:
         pg_helper = PgHelper()
 
-        user_guid = request.json.get('userGUID', None)
+        user_guid = request.json.get('userGuid', None)
         new_password = request.json.get('newPassword', None)
 
         pg_helper.execute_sql('''update gy_user set password=%s where guid=%s''',

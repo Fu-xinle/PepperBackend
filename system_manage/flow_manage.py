@@ -2,9 +2,10 @@
    读取流程图;流程图设计保存流程图;
 """
 import traceback
+import datetime
 
 from flask import (jsonify, request)
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import (jwt_required, get_jwt_identity)
 
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
@@ -55,51 +56,6 @@ def all_flows():
                                                order by id''')
 
         return jsonify({"flowData": [dict(x.items()) for x in records]}), 200
-
-    except Exception as exception:
-        return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
-
-
-@system_manage_api.route('/flow_manage/add_flow', methods=('post',))
-@jwt_required()
-@logit()
-def add_flow():
-    """添加流程项信息
-    用户新建流程，将新建的流程信息保存到到数据库
-    ---
-    tags:
-      - system_manage_api/flow_manage
-    parameters:
-      - in: dict
-        name: newFlowInfo
-        type: dict
-        required: true
-        description: 新建的流程信息
-    responses:
-      200:
-        description: 空，不返回有效数据
-      500:
-        description: 服务运行错误,异常信息
-        schema:
-          properties:
-            errMessage:
-              type: string
-              description: 异常信息，包括异常信息的类型
-            traceMessage:
-              type: string
-              description: 异常更加详细的信息，包括异常的位置
-    """
-    try:
-        pg_helper = PgHelper()
-        request_param = request.json.get('newFlowInfo', None)
-
-        # 流程基本信息插入
-        pg_helper.execute_sql('''INSERT INTO gy_flow(guid, name, description) VALUES(%s, %s, %s);''',
-                              (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
-
-        # 流程节点信息的插入
-
-        return jsonify({}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -178,7 +134,72 @@ def delete_flow():
     try:
         pg_helper = PgHelper()
         # 删除的信息：流程信息、流程节点信息、工作流关联的本流程设置为NULL
-        pg_helper.execute_sql('''delete from gy_flow where guid=%s''', (request.json.get('guid', None),))
+        pg_helper.execute_sql('''delete from gy_flow where guid=%s;delete from gy_flow_node where flow_guid=%s;''',
+                              (request.json.get('guid', None), request.json.get('guid', None)))
+
+        return jsonify({}), 200
+
+    except Exception as exception:
+        return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
+
+
+@system_manage_api.route('/flow_manage/new_and_save_flow', methods=('post',))
+@jwt_required()
+@logit()
+def new_and_save_flow():
+    """新建流程以及流程另存为操作，包含保存流程图
+    保存流程信息、流程图信息以及流程节点信息
+    ---
+    tags:
+      - system_manage_api/flow_manage
+    parameters:
+      - in: obeject
+        name: flowInfo
+        type: obeject
+        required: true
+        description: 流程信息
+      - in: string
+        name: diagramJson
+        type: string
+        required: true
+        description: 流程模型流程图的json字符串
+      - in: obeject
+        name: nodes
+        type: obeject
+        required: true
+        description: 流程模型各个节点信息数组
+    responses:
+      200:
+        description: 空，不返回有效数据
+      500:
+        description: 服务运行错误,异常信息
+        schema:
+          properties:
+            errMessage:
+              type: string
+              description: 异常信息，包括异常信息的类型
+            traceMessage:
+              type: string
+              description: 异常更加详细的信息，包括异常的位置
+    """
+    try:
+        sql_tuple = ()
+
+        # 插入流程信息、流程图信息
+        current_user = get_jwt_identity()
+        flow_info = request.json.get('flowInfo', None)
+        sql_string = "INSERT INTO gy_flow(guid, name, description,flow_json,create_user,create_time) VALUES(%s, %s, %s, %s, %s, %s);"
+        sql_tuple = sql_tuple + (flow_info.get('guid', None), flow_info.get('name', None), flow_info.get(
+            'description', None), request.json.get('diagramJson', None), current_user['userName'], datetime.datetime.now())
+
+        #插入节点的语句，如果节点存在仅仅更新相应的信息
+        for x in request.json.get('nodes', None):
+            sql_string = sql_string + 'insert into gy_flow_node(guid,node_name,next_node_guid,flow_guid) values(%s,%s,%s,%s);'
+            sql_tuple = sql_tuple + (x['guid'], x['nodeName'], x['nextNodeGuid'], flow_info.get('guid', None))
+
+        #数据库操作
+        pg_helper = PgHelper()
+        pg_helper.execute_sql(sql_string, sql_tuple)
 
         return jsonify({}), 200
 
@@ -190,7 +211,7 @@ def delete_flow():
 @jwt_required()
 def flow_diagram():
     """获取流程模型的流程图
-    根据自定义模型的GUID标识，获取流程模型的流程图
+    根据自定义模型的guid标识，获取流程模型的流程图
     ---
     tags:
       - system_manage_api/flow_manage
@@ -205,7 +226,7 @@ def flow_diagram():
         description: 流程模型的流程图信息，字符串形式
         schema:
           properties:
-            flow_diagram:
+            diagramJson:
               type: string
               description: 流程模型的流程图信息，字符串形式
       500:
@@ -221,9 +242,9 @@ def flow_diagram():
     """
     try:
         pg_helper = PgHelper()
-        diagram_json = pg_helper.query_single_value('select diagram from gy_flow where guid=%s', (request.json.get('guid', None),))
+        diagram_json = pg_helper.query_single_value('select flow_json from gy_flow where guid=%s', (request.json.get('guid', None),))
 
-        return jsonify({"flow_diagram": diagram_json}), 200
+        return jsonify({"diagramJson": diagram_json}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -234,7 +255,7 @@ def flow_diagram():
 @logit()
 def save_flow_diagram():
     """保存流程模型的流程图以及节点信息
-    根据流程模型的GUID标识，保存流程模型的流程图以及节点信息
+    根据流程模型的guid标识，保存流程模型的流程图以及节点信息
     ---
     tags:
       - system_manage_api/flow_manage
@@ -248,7 +269,7 @@ def save_flow_diagram():
         name: diagramJson
         type: string
         required: true
-        description: 流程模型流程图的JSON字符串
+        description: 流程模型流程图的json字符串
       - in: obeject
         name: nodes
         type: obeject
@@ -272,13 +293,13 @@ def save_flow_diagram():
         sql_tuple = ()
 
         #更新流程图、删除旧的流程图节点
-        sql_string = "update gy_flow set diagram=%s where guid=%s;delete from gy_flow_node where flow_guid=%s;"
-        sql_tuple = sql_tuple + (request.json.get('diagram_json', None), request.json.get('guid', None), request.json.get('guid', None))
+        sql_string = "update gy_flow set flow_json=%s where guid=%s;delete from gy_flow_node where flow_guid=%s;"
+        sql_tuple = sql_tuple + (request.json.get('diagramJson', None), request.json.get('guid', None), request.json.get('guid', None))
 
         #插入节点的语句，如果节点存在仅仅更新相应的信息
-        for x in request.json.get('nodes', None)["flowNodeArray"]:
-            sql_string = sql_string + 'insert into gy_flow_node(guid,name,next_guid,flow_guid) values(%s,%s,%s,%s);'
-            sql_tuple = sql_tuple + (x['GUID'], x['nodeName'], x['nextFlow'], request.json.get('guid', None))
+        for x in request.json.get('nodes', None):
+            sql_string = sql_string + 'insert into gy_flow_node(guid,node_name,next_node_guid,flow_guid) values(%s,%s,%s,%s);'
+            sql_tuple = sql_tuple + (x['guid'], x['nodeName'], x['nextNodeGuid'], request.json.get('guid', None))
 
         #数据库操作
         pg_helper = PgHelper()

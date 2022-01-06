@@ -11,6 +11,7 @@
     "aaron-bond.better-comments",
     "eamodio.gitlens",
     "kevinrose.vsc-python-indent",
-    "dongli.python-preview"
+    "dongli.python-preview",
+    "visualstudioexptteam.intellicode-api-usage-examples"
   ]
 }

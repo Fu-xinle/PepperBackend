@@ -24,7 +24,7 @@ def sidebar_menu():
         name: navnar_menu_guid
         type: string
         required: false
-        description: 导航栏菜单的GUID标识
+        description: 导航栏菜单的guid标识
     responses:
       200:
         description: 侧边栏菜单，数组类型
