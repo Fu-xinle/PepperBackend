@@ -3,9 +3,10 @@
 """
 import traceback
 import types
+import datetime
 
 from flask import (jsonify, request)
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import (jwt_required, get_jwt_identity)
 
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
@@ -55,16 +56,16 @@ def all_geoprocessing_model():
         pg_helper = PgHelper()
         records = pg_helper.query_datatable('''with recursive cte as
                                                 (
-                                                select guid, name, description,create_user,to_char(create_time,'YYYY-MM-DD HH24-MI-SS') as create_time,is_leaf,name::text as tree_name,parent_guid
+                                                select guid, name, description,create_user,to_char(create_time,'YYYY-MM-DD HH24:MI:SS') as create_time,is_leaf,name::text as tree_name,parent_guid
                                                 from gy_geoprocessing_model where parent_guid = '99fb71e8-a794-47c2-a9c6-dc0a6e36248f'
                                                 union all
                                                 select
-                                                origin.guid, origin.name, origin.description,origin.create_user,to_char(origin.create_time,'YYYY-MM-DD HH24-MI-SS') as create_time,origin.is_leaf,
+                                                origin.guid, origin.name, origin.description,origin.create_user,to_char(origin.create_time,'YYYY-MM-DD HH24:MI:SS') as create_time,origin.is_leaf,
                                                 cte.tree_name || '~' || origin.name,origin.parent_guid
                                                 from cte,gy_geoprocessing_model origin 
                                                 where origin.parent_guid = cte.guid
                                                 )
-                                                select guid, name, description,create_user,create_time,is_leaf,tree_name,parent_guid
+                                                select  guid, name, description,create_user,create_time,is_leaf,tree_name,parent_guid
                                                 from cte;''')
 
         return jsonify({"geoprocessingModelData": [dict(x.items()) for x in records]}), 200
@@ -84,7 +85,7 @@ def add_geoprocessing_model():
       - system_manage_api/geoprocessing_model
     parameters:
       - in: dict
-        name: editGeoprocessingModelInfo
+        name: newGeoprocessingModelInfo
         type: dict
         required: true
         description: 新建的算法模型信息
@@ -104,11 +105,17 @@ def add_geoprocessing_model():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editGeoprocessingModelInfo', None)
-        pg_helper.execute_sql('''INSERT INTO gy_geoprocessing_model(guid, name, description) VALUES(%s, %s, %s);''',
-                              (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
 
-        return jsonify({}), 200
+        request_param = request.json.get('newGeoprocessingModelInfo', None)
+        pg_helper.execute_sql(
+            '''INSERT INTO gy_geoprocessing_model(guid, name, description,create_user,create_time,parent_guid,is_leaf)
+               VALUES(%s, %s, %s, %s, %s, %s, %s);''',
+            (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None), current_user['userName'],
+             current_time, request_param.get('parentGuid', None), request_param.get('isLeaf', None)))
+
+        return jsonify({'create_user': current_user['userName'], 'create_time': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -145,11 +152,16 @@ def edit_geoprocessing_model():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editGeoprocessingModelInfo', None)
-        pg_helper.execute_sql('''update gy_geoprocessing_model set name=%s,description=%s where guid=%s''',
-                              (request_param.get('name', None), request_param.get('description', None), request_param.get('guid', None)))
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
 
-        return jsonify({}), 200
+        request_param = request.json.get('editGeoprocessingModelInfo', None)
+        pg_helper.execute_sql(
+            '''update gy_geoprocessing_model set name=%s,description=%s,create_user=%s,create_time=%s,parent_guid=%s where guid=%s''',
+            (request_param.get('name', None), request_param.get('description', None), current_user['userName'], current_time,
+             request_param.get('parent_guid', None), request_param.get('guid', None)))
+
+        return jsonify({'create_user': current_user['userName'], 'create_time': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
