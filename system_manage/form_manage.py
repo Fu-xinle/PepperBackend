@@ -2,9 +2,10 @@
    读取表单字段;添加字段;删除字段;修改字段;
 """
 import traceback
+import datetime
 
 from flask import (jsonify, request)
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import (jwt_required, get_jwt_identity)
 
 from toolbox.postgresql_helper import PgHelper
 from toolbox.user_log import logit
@@ -26,18 +27,36 @@ def all_forms():
         description: 表单信息，数组类型
         schema:
           properties:
-            id:
-              type: integer
-              description: 序号
-            guid:
-              type: string
-              description: 表单的唯一标识符
-            name:
-              type: string
-              description: 表单名称
-            description:
-              type: string
-              description: 描述
+            geoprocessingModelData:
+              type: array
+              description: 表单信息数组
+              items:
+                type: object
+                properties:
+                  guid:
+                    type: string
+                    description: 表单的唯一标识符
+                  name:
+                    type: string
+                    description: 表单名称
+                  description:
+                    type: string
+                    description: 描述
+                  createUser:
+                    type: string
+                    description: 表单创建者
+                  createTime:
+                    type: string
+                    description: 表单创建时间
+                  isLeaf:
+                    type: boolean
+                    description: 是否是叶节点，即是表单还是表单类别
+                  treeName:
+                    type: string
+                    description: 表单在树结构中的名称，使用~连接树层次名称
+                  parentGuid:
+                    type: string
+                    description: 父类型的唯一标识
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -51,9 +70,19 @@ def all_forms():
     """
     try:
         pg_helper = PgHelper()
-        records = pg_helper.query_datatable('''select row_number() over(order by id) AS id, guid,name,description
-                                                   from gy_form
-                                                   order by id''')
+        records = pg_helper.query_datatable('''with recursive cte as
+                                                (
+                                                select guid, name, description,create_user as "createUser",to_char(create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",is_leaf as "isLeaf",name::text as "treeName",parent_guid as "parentGuid"
+                                                from gy_form where parent_guid = 'e6e9ce2a-e960-4349-b5c0-866cb41d3037'
+                                                union all
+                                                select
+                                                origin.guid, origin.name, origin.description,origin.create_user as "createUser",to_char(origin.create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",origin.is_leaf as "isLeaf",
+                                                cte."treeName" || '~' || origin.name,origin.parent_guid as "parentGuid"
+                                                from cte,gy_form origin 
+                                                where origin.parent_guid = cte.guid
+                                                )
+                                                select  guid, name, description,"createUser","createTime","isLeaf","treeName","parentGuid"
+                                                from cte;''')
 
         return jsonify({"formData": [dict(x.items()) for x in records]}), 200
 
@@ -71,14 +100,48 @@ def add_form():
     tags:
       - system_manage_api/form_manage
     parameters:
-      - in: dict
+      - in: body
         name: newFormInfo
-        type: dict
+        type: object
         required: true
         description: 新建的表单项信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 表单的唯一标识符
+            name:
+              type: string
+              description: 表单名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 表单创建者
+            createTime:
+              type: string
+              description: 表单创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是表单还是表单类别
+            treeName:
+              type: string
+              description: 表单在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
     responses:
       200:
-        description: 空，不返回有效数据
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -92,11 +155,17 @@ def add_form():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('newFormInfo', None)
-        pg_helper.execute_sql('''INSERT INTO gy_form(guid, name, description) VALUES(%s, %s, %s);''',
-                              (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None)))
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
 
-        return jsonify({}), 200
+        request_param = request.json.get('newFormInfo', None)
+        pg_helper.execute_sql(
+            '''INSERT INTO gy_form(guid, name, description,create_user,create_time,parent_guid,is_leaf)
+                                 VALUES(%s, %s, %s, %s, %s, %s, %s);''',
+            (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None), current_user['userName'],
+             current_time, request_param.get('parentGuid', None), request_param.get('isLeaf', None)))
+
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -112,14 +181,48 @@ def edit_form():
     tags:
       - system_manage_api/form_manage
     parameters:
-      - in: dict
+      - in: body
         name: editFormInfo
-        type: dict
+        type: object
         required: true
         description: 修改后的表单项信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 表单的唯一标识符
+            name:
+              type: string
+              description: 表单名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 表单创建者
+            createTime:
+              type: string
+              description: 表单创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是表单还是表单类别
+            treeName:
+              type: string
+              description: 表单在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
     responses:
       200:
-        description: 空，不返回有效数据
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -133,11 +236,15 @@ def edit_form():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editFormInfo', None)
-        pg_helper.execute_sql('''update gy_form set name=%s,description=%s where guid=%s''',
-                              (request_param.get('name', None), request_param.get('description', None), request_param.get('guid', None)))
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
 
-        return jsonify({}), 200
+        request_param = request.json.get('editFormInfo', None)
+        pg_helper.execute_sql('''update gy_form set name=%s,description=%s,create_user=%s,create_time=%s,parent_guid=%s where guid=%s''',
+                              (request_param.get('name', None), request_param.get('description', None), current_user['userName'], current_time,
+                               request_param.get('parentGuid', None), request_param.get('guid', None)))
+
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -153,7 +260,7 @@ def delete_form():
     tags:
       - system_manage_api/form_manage
     parameters:
-      - in: string
+      - in: body
         name: guid
         type: string
         required: true

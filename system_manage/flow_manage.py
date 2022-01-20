@@ -27,18 +27,36 @@ def all_flows():
         description: 流程信息，数组类型
         schema:
           properties:
-            id:
-              type: integer
-              description: 序号
-            guid:
-              type: string
-              description: 流程的唯一标识符
-            name:
-              type: string
-              description: 流程名称
-            description:
-              type: string
-              description: 描述
+            flowData:
+              type: array
+              description: 流程数组
+              items:
+                type: object
+                properties:
+                  guid:
+                    type: string
+                    description: 流程的唯一标识符
+                  name:
+                    type: string
+                    description: 流程名称
+                  description:
+                    type: string
+                    description: 描述
+                  createUser:
+                    type: string
+                    description: 流程创建者
+                  createTime:
+                    type: string
+                    description: 流程创建时间
+                  isLeaf:
+                    type: boolean
+                    description: 是否是叶节点，即是流程还是流程类别
+                  treeName:
+                    type: string
+                    description: 流程在树结构中的名称，使用~连接树层次名称
+                  parentGuid:
+                    type: string
+                    description: 父类型的唯一标识
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -52,10 +70,104 @@ def all_flows():
     """
     try:
         pg_helper = PgHelper()
-        records = pg_helper.query_datatable('''select row_number() over(order by id) AS id, guid,name,description from gy_flow
-                                               order by id''')
+        records = pg_helper.query_datatable('''with recursive cte as
+                                                (
+                                                select guid, name, description,create_user as "createUser",to_char(create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",is_leaf as "isLeaf",name::text as "treeName",parent_guid as "parentGuid"
+                                                from gy_flow where parent_guid = 'bc7dc16e-184f-4743-a9c5-e7d1507be350'
+                                                union all
+                                                select
+                                                origin.guid, origin.name, origin.description,origin.create_user as "createUser",to_char(origin.create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",origin.is_leaf as "isLeaf",
+                                                cte."treeName" || '~' || origin.name,origin.parent_guid as "parentGuid"
+                                                from cte,gy_flow origin 
+                                                where origin.parent_guid = cte.guid
+                                                )
+                                                select  guid, name, description,"createUser","createTime","isLeaf","treeName","parentGuid"
+                                                from cte;''')
 
         return jsonify({"flowData": [dict(x.items()) for x in records]}), 200
+
+    except Exception as exception:
+        return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
+
+
+@system_manage_api.route('/flow_manage/add_flow', methods=('post',))
+@jwt_required()
+@logit()
+def add_flow():
+    """添加流程项信息
+    用户新建流程，将新建的流程信息保存到到数据库
+    ---
+    tags:
+      - system_manage_api/flow_manage
+    parameters:
+      - in: body
+        name: newFlowInfo
+        type: object
+        required: true
+        description: 新建的流程信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 流程的唯一标识符
+            name:
+              type: string
+              description: 流程名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 流程创建者
+            createTime:
+              type: string
+              description: 流程创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是流程还是流程类别
+            treeName:
+              type: string
+              description: 流程在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
+    responses:
+      200:
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
+      500:
+        description: 服务运行错误,异常信息
+        schema:
+          properties:
+            errMessage:
+              type: string
+              description: 异常信息，包括异常信息的类型
+            traceMessage:
+              type: string
+              description: 异常更加详细的信息，包括异常的位置
+    """
+    try:
+        pg_helper = PgHelper()
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
+
+        request_param = request.json.get('newFlowInfo', None)
+
+        # 流程基本信息插入
+        pg_helper.execute_sql(
+            '''INSERT INTO gy_flow(guid, name, description,create_user,create_time,parent_guid,is_leaf)
+                                 VALUES(%s, %s, %s, %s, %s, %s, %s);''',
+            (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None), current_user['userName'],
+             current_time, request_param.get('parentGuid', None), request_param.get('isLeaf', None)))
+
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -71,14 +183,48 @@ def edit_flow():
     tags:
       - system_manage_api/flow_manage
     parameters:
-      - in: dict
+      - in: body
         name: editFlowInfo
-        type: dict
+        type: object
         required: true
         description: 修改后的流程信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 流程的唯一标识符
+            name:
+              type: string
+              description: 流程名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 流程创建者
+            createTime:
+              type: string
+              description: 流程创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是流程还是流程类别
+            treeName:
+              type: string
+              description: 流程在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
     responses:
       200:
-        description: 空，不返回有效数据
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -92,11 +238,15 @@ def edit_flow():
     """
     try:
         pg_helper = PgHelper()
-        request_param = request.json.get('editFlowInfo', None)
-        pg_helper.execute_sql('''update gy_flow set name=%s,description=%s where guid=%s''',
-                              (request_param.get('name', None), request_param.get('description', None), request_param.get('guid', None)))
+        current_user = get_jwt_identity()
+        current_time = datetime.datetime.now()
 
-        return jsonify({}), 200
+        request_param = request.json.get('editFlowInfo', None)
+        pg_helper.execute_sql('''update gy_flow set name=%s,description=%s,create_user=%s,create_time=%s,parent_guid=%s where guid=%s''',
+                              (request_param.get('name', None), request_param.get('description', None), current_user['userName'], current_time,
+                               request_param.get('parentGuid', None), request_param.get('guid', None)))
+
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -112,7 +262,7 @@ def delete_flow():
     tags:
       - system_manage_api/flow_manage
     parameters:
-      - in: string
+      - in: body
         name: guid
         type: string
         required: true

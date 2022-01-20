@@ -26,21 +26,39 @@ def all_geoprocessing_model():
       - system_manage_api/geoprocessing_model
     responses:
       200:
-        description: 算法模型信息，数组类型
+        description: 服务运行成功返回的对象
         schema:
           properties:
-            id:
-              type: integer
-              description: 序号
-            guid:
-              type: string
-              description: 算法模型的唯一标识符
-            name:
-              type: string
-              description: 算法模型名称
-            description:
-              type: string
-              description: 描述
+            geoprocessingModelData:
+              type: array
+              description: 地理处理模型数组
+              items:
+                type: object
+                properties:
+                  guid:
+                    type: string
+                    description: 算法模型的唯一标识符
+                  name:
+                    type: string
+                    description: 算法模型名称
+                  description:
+                    type: string
+                    description: 描述
+                  createUser:
+                    type: string
+                    description: 算法模型创建者
+                  createTime:
+                    type: string
+                    description: 算法模型创建时间
+                  isLeaf:
+                    type: boolean
+                    description: 是否是叶节点，即是算法模型还是算法模型类别
+                  treeName:
+                    type: string
+                    description: 算法模型在树结构中的名称，使用~连接树层次名称
+                  parentGuid:
+                    type: string
+                    description: 父类型的唯一标识
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -56,16 +74,16 @@ def all_geoprocessing_model():
         pg_helper = PgHelper()
         records = pg_helper.query_datatable('''with recursive cte as
                                                 (
-                                                select guid, name, description,create_user,to_char(create_time,'YYYY-MM-DD HH24:MI:SS') as create_time,is_leaf,name::text as tree_name,parent_guid
+                                                select guid, name, description,create_user as "createUser",to_char(create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",is_leaf as "isLeaf",name::text as "treeName",parent_guid as "parentGuid"
                                                 from gy_geoprocessing_model where parent_guid = '99fb71e8-a794-47c2-a9c6-dc0a6e36248f'
                                                 union all
                                                 select
-                                                origin.guid, origin.name, origin.description,origin.create_user,to_char(origin.create_time,'YYYY-MM-DD HH24:MI:SS') as create_time,origin.is_leaf,
-                                                cte.tree_name || '~' || origin.name,origin.parent_guid
+                                                origin.guid, origin.name, origin.description,origin.create_user as "createUser",to_char(origin.create_time,'YYYY-MM-DD HH24:MI:SS') as "createTime",origin.is_leaf as "isLeaf",
+                                                cte."treeName" || '~' || origin.name,origin.parent_guid as "parentGuid"
                                                 from cte,gy_geoprocessing_model origin 
                                                 where origin.parent_guid = cte.guid
                                                 )
-                                                select  guid, name, description,create_user,create_time,is_leaf,tree_name,parent_guid
+                                                select  guid, name, description,"createUser","createTime","isLeaf","treeName","parentGuid"
                                                 from cte;''')
 
         return jsonify({"geoprocessingModelData": [dict(x.items()) for x in records]}), 200
@@ -84,14 +102,48 @@ def add_geoprocessing_model():
     tags:
       - system_manage_api/geoprocessing_model
     parameters:
-      - in: dict
-        name: newGeoprocessingModelInfo
-        type: dict
+      - name: newGeoprocessingModelInfo
+        type: object
+        in: body
         required: true
         description: 新建的算法模型信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 算法模型的唯一标识符
+            name:
+              type: string
+              description: 算法模型名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 算法模型创建者
+            createTime:
+              type: string
+              description: 算法模型创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是算法模型还是算法模型类别
+            treeName:
+              type: string
+              description: 算法模型在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
     responses:
       200:
-        description: 空，不返回有效数据
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -115,7 +167,7 @@ def add_geoprocessing_model():
             (request_param.get('guid', None), request_param.get('name', None), request_param.get('description', None), current_user['userName'],
              current_time, request_param.get('parentGuid', None), request_param.get('isLeaf', None)))
 
-        return jsonify({'create_user': current_user['userName'], 'create_time': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -131,14 +183,48 @@ def edit_geoprocessing_model():
     tags:
       - system_manage_api/geoprocessing_model
     parameters:
-      - in: dict
-        name: editGeoprocessingModelInfo
-        type: dict
+      - name: editGeoprocessingModelInfo
+        type: object
+        in: body
         required: true
-        description: 修改后的算法模型信息
+        description: 新建的算法模型信息
+        schema:
+          properties:
+            guid:
+              type: string
+              description: 算法模型的唯一标识符
+            name:
+              type: string
+              description: 算法模型名称
+            description:
+              type: string
+              description: 描述
+            createUser:
+              type: string
+              description: 算法模型创建者
+            createTime:
+              type: string
+              description: 算法模型创建时间
+            isLeaf:
+              type: boolean
+              description: 是否是叶节点，即是算法模型还是算法模型类别
+            treeName:
+              type: string
+              description: 算法模型在树结构中的名称，使用~连接树层次名称
+            parentGuid:
+              type: string
+              description: 父类型的唯一标识
     responses:
       200:
-        description: 空，不返回有效数据
+        description: 操作者和操作时间信息
+        schema:
+          properties:
+            createUser:
+              type: string
+              description: 操作者、用户名称
+            createTime:
+              type: string
+              description: 操作时间
       500:
         description: 服务运行错误,异常信息
         schema:
@@ -159,9 +245,9 @@ def edit_geoprocessing_model():
         pg_helper.execute_sql(
             '''update gy_geoprocessing_model set name=%s,description=%s,create_user=%s,create_time=%s,parent_guid=%s where guid=%s''',
             (request_param.get('name', None), request_param.get('description', None), current_user['userName'], current_time,
-             request_param.get('parent_guid', None), request_param.get('guid', None)))
+             request_param.get('parentGuid', None), request_param.get('guid', None)))
 
-        return jsonify({'create_user': current_user['userName'], 'create_time': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
+        return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
     except Exception as exception:
         return jsonify({"errMessage": repr(exception), "traceMessage": traceback.format_exc()}), 500
@@ -177,7 +263,7 @@ def delete_geoprocessing_model():
     tags:
       - system_manage_api/geoprocessing_model
     parameters:
-      - in: string
+      - in: body
         name: guid
         type: string
         required: true

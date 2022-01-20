@@ -19,21 +19,67 @@ def user_log_server_side_data():
     tags:
       - system_manage_api/log_manage
     parameters:
-      - in: integer
+      - in: body
         name: totalCount
         type: integer
         required: true
         description: 用户日志记录总数
-      - in: string
+      - in: body
         name: searchText
         type: string
         required: true
         description: 全局搜索字符串
-      - in: dict
+      - in: body
         name: requestParams
-        type: dict
+        type: object
         required: true
         description: ag-grid分页请求参数
+        schema:
+          properties:
+            startRow:
+                type: integer
+                description: 分页的起始行
+            endRow:
+                type: integer
+                description: 分页的结束行
+            pivotMode:
+                type: boolean
+                description: 是否开启pivot模式
+            rowGroupCols:
+              type: array
+              description: 分组的列(未使用)
+              items:
+                  type: object
+            valueCols:
+              type: array
+              description: 聚合的列(未使用)
+              items:
+                  type: object
+            pivotCols:
+              type: array
+              description: pivot的列(未使用)
+              items:
+                  type: object
+            groupKeys:
+              type: array
+              description: 用户正在查看组(未使用)
+              items:
+                  type: string
+            filterModel:
+              type: object
+              description: 过滤信息对象(未使用)
+            sortModel:
+              type: array
+              description: 排序信息对象
+              items:
+                  type: object
+                  properties:
+                    colId:
+                      type: string
+                      description: 列的唯一标识符
+                    sort:
+                      type: string
+                      description: 升序还是降序
     responses:
       200:
         description: 记录总数与分页请求的数据
@@ -45,6 +91,21 @@ def user_log_server_side_data():
             rowData:
               type: array
               description: 分页中当前页的数据
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: 序号
+                  userName:
+                    type: string
+                    description: 用户名
+                  eventDescription:
+                    type: string
+                    description: 日志中事件描述
+                  eventTime:
+                    type: string
+                    description: 日志中事件时间
       500:
         description: 服务运行错误,异常信息
         schema:
