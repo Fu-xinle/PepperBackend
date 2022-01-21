@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager
 #from werkzeug.security import safe_str_cmp
 
 #蓝图路由导入
+from development_operations.blue_print import development_operations_api
 from system_manage.blue_print import system_manage_api
 from system_manage_authorize.blue_print import system_manage_authorize_api
 from technology_research.blue_print import technology_research_api
@@ -19,6 +20,7 @@ app = Flask(__name__)
 app.config.from_object('toolbox.flask_config.DevelopmentConfig')
 
 #蓝图注册
+app.register_blueprint(development_operations_api, url_prefix='/development_operations_api')
 app.register_blueprint(system_manage_api, url_prefix='/system_manage_api')
 app.register_blueprint(system_manage_authorize_api, url_prefix='/system_manage_authorize_api')
 app.register_blueprint(technology_research_api, url_prefix='/technology_research_api')

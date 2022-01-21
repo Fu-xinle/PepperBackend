@@ -187,7 +187,7 @@ def edit_geoprocessing_model():
         type: object
         in: body
         required: true
-        description: 新建的算法模型信息
+        description: 编辑的算法模型信息
         schema:
           properties:
             guid:
@@ -244,8 +244,8 @@ def edit_geoprocessing_model():
         request_param = request.json.get('editGeoprocessingModelInfo', None)
         pg_helper.execute_sql(
             '''update gy_geoprocessing_model set name=%s,description=%s,create_user=%s,create_time=%s,parent_guid=%s where guid=%s''',
-            (request_param.get('name', None), request_param.get('description', None), current_user['userName'], current_time,
-             request_param.get('parentGuid', None), request_param.get('guid', None)))
+            (request_param.get('name', None), request_param.get(
+                'description', None), current_user['userName'], current_time, request_param.get('parentGuid', None), request_param.get('guid', None)))
 
         return jsonify({'createUser': current_user['userName'], 'createTime': current_time.strftime("%Y-%m-%d %H:%M:%S")}), 200
 
