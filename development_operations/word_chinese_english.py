@@ -126,7 +126,7 @@ def add_word_chinese_english():
               description: 是否是叶节点，即是词汇项还是词汇项目录
             treeChineseName:
               type: string
-              description:词汇项在树结构中的名称，使用~连接树层次名称
+              description: 词汇项在树结构中的名称，使用~连接树层次名称
             parentGuid:
               type: string
               description: 父类型的唯一标识
@@ -207,7 +207,7 @@ def edit_word_chinese_english():
               description: 是否是叶节点，即是词汇项还是词汇项目录
             treeChineseName:
               type: string
-              description:词汇项在树结构中的名称，使用~连接树层次名称
+              description: 词汇项在树结构中的名称，使用~连接树层次名称
             parentGuid:
               type: string
               description: 父类型的唯一标识

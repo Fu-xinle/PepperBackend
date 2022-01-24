@@ -33,7 +33,7 @@ def all_workflows():
                 properties:
                   guid:
                     type: string
-                    description:业务工作流的唯一标识符
+                    description: 业务工作流的唯一标识符
                   name:
                     type: string
                     description: 业务工作流名称
