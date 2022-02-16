@@ -1,10 +1,11 @@
 flask
 flasgger
-flask-jwt-extended
 flask-cors
-psycopg2
-pre-commit
-pylint
-yapf
+flask-jwt-extended
+packaging
 pipdeptree
-pip-review
+pre-commit
+psycopg2
+pylint
+virtualenv
+yapf
