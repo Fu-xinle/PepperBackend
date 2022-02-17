@@ -1,5 +1,5 @@
 """环境配置模块,pylint警告 "R0903: Too few public methods"
-   是否使用dictionary or namedtuple代替.(考虑继承特性，仅取消警告)
+   是否使用dictionary or namedtuple代替.(考虑继承特性,仅取消警告)
 """
 
 

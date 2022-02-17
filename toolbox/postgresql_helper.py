@@ -19,7 +19,7 @@ class PgHelper:
         返回值：
         """
         try:
-            self.__connection__ = psycopg2.connect(host="localhost", port="5432", dbname="pepper", user="postgres", password="Gis123")
+            self.__connection__ = psycopg2.connect(host="192.168.1.177", port="5432", dbname="pepper", user="postgres", password="Gis123")
             self.__cursor__ = self.__connection__.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except Exception:
             ...
